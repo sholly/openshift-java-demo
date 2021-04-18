@@ -20,4 +20,12 @@ Now run the dockerized app.  We have to use the *--link* flag to allow demo app 
 
 `docker run -e SPRING_PROFILES_ACTIVE=dockerlocal --rm  -d --link tododb --name demo -p 8080:8080 openshift-java-demo`
 
+Running on openshift:
+oc new-app --name java-demo --as-deployment-config java~https://github.com/sholly/openshift-java-demo.git
+
+oc create configmap java-demo --from-file resources/application-openshiftdev.properties
+oc set volume dc/java-demo --add -t configmap -m /deployments/config --name java-demo-volume --configmap-name java-demo
+oc set env dc/java-demo --env SPRING_PROFILES_ACTIVE=openshiftdev
+oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo --from-literal SPRING_DATASOURCE_PASSWORD=demo123
+oc set env dc/java-demo  --from secret/tododbsecret
 
