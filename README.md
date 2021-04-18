@@ -37,7 +37,7 @@ deploy app using new-app/s2i on source code
 oc new-app --name java-demo --as-deployment-config java~https://github.com/sholly/openshift-java-demo.git
 
 oc create configmap java-demo --from-file openshift/deploy/application.properties
-oc set volume dc/java-demo --add -t configmap -m /config --name java-demo-volume --configmap-name java-demo
+oc set volume dc/java-demo --add -t configmap -m /deployments/config --name java-demo-volume --configmap-name java-demo
 
 oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo --from-literal SPRING_DATASOURCE_PASSWORD=openshift123
 oc set env dc/java-demo  --from secret/tododbsecret
@@ -58,5 +58,8 @@ oc new-app --docker-image=docker.io/sholly/openshift-java-demo:latest --name jav
 oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo --from-literal SPRING_DATASOURCE_PASSWORD=openshift123
 oc set env dc/java-demo  --from secret/tododbsecret
 
-oc set volume dc/java-demo --add -t configmap -m /config --name java-demo-volume --configmap-name java-demo
+oc create configmap java-demo --from-file openshift/deploy/application.properties
+oc set volume dc/java-demo --add -t configmap -m /deployments/config --name java-demo-volume --configmap-name java-demo
+
 oc expose svc java-demo 
+

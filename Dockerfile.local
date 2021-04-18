@@ -1,7 +1,11 @@
 FROM openjdk:11
-EXPOSE 8080
-ADD target/openshift-java-demo.jar /openshift-java-demo.jar
-RUN mkdir /config
+RUN mkdir -p /config && \
+    mkdir -p /deployments/config &&  \
+    chown -R 1001:0 /deployments/ && \
+    chmod -R 775 /deployments/
+ADD target/openshift-java-demo.jar /deployments/openshift-java-demo.jar
+WORKDIR /deployments
 USER 1001
+EXPOSE 8080
 #ENTRYPOINT ["java","-jar","-Dspring.profiles.active=docker", "/openshift-java-demo.jar"]
-ENTRYPOINT ["java","-jar", "/openshift-java-demo.jar"]
+ENTRYPOINT ["java","-jar", "/deployments/openshift-java-demo.jar"]
