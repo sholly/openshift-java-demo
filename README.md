@@ -56,6 +56,14 @@ oc set env dc/java-demo  --from secret/tododbsecret
 
 oc expose svc java-demo
 
+Now let's set liveness and readiness probes: 
+
+`oc set probe dc/java-demo --readiness  --get-url=http://:8080/actuator/health --initial-delay-seconds=10 --timeout-seconds=2`
+
+`oc set probe dc/java-demo --liveness --get-url=http://:8080/actuator/health --initial-delay-seconds=10 --timeout-seconds=2`
+
+
+
 
 
 Deploy app from image:
