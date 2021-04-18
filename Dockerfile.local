@@ -1,5 +1,7 @@
 FROM openjdk:11
 EXPOSE 8080
 ADD target/openshift-java-demo.jar /openshift-java-demo.jar
+RUN mkdir /config
+USER 1001
 #ENTRYPOINT ["java","-jar","-Dspring.profiles.active=docker", "/openshift-java-demo.jar"]
 ENTRYPOINT ["java","-jar", "/openshift-java-demo.jar"]
