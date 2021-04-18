@@ -1,6 +1,5 @@
 apiVersion: route.openshift.io/v1
 kind: Route
-name: java-demo
 metadata:
   annotations:
     openshift.io/host.generated: "true"
@@ -8,6 +7,7 @@ metadata:
     app: java-demo
     app.kubernetes.io/component: java-demo
     app.kubernetes.io/instance: java-demo
+  name: java-demo
 spec:
   port:
     targetPort: 8080-tcp

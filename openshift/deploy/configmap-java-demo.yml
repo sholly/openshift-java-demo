@@ -4,7 +4,7 @@ data:
     spring.datasource.url=jdbc:postgresql://tododb:5432/todo
     spring.jpa.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
     management.endpoints.web.exposure.include=*
-    demo.env="I'm running on openshift"
+    demo.env="I was deployed directly using YAML files"
 kind: ConfigMap
 metadata:
   name: java-demo

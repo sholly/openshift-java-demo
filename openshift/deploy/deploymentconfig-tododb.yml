@@ -1,7 +1,7 @@
 apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
-name: tododb
 metadata:
+  name: tododb
   labels:
     app: postgresql-ephemeral
     app.kubernetes.io/component: postgresql-ephemeral

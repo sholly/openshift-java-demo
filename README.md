@@ -17,12 +17,20 @@ first, build app with
 Then build docker image:
 
 `docker build -f Dockerfile.local -t openshift-java-demo .`
+
+or just: 
+`mvn clean package && docker build -f Dockerfile.local -t openshift-java-demo .`
 Now run the dockerized app.  We have to use the *--link* flag to allow demo app to communicate with the database container
 
 `docker run -e SPRING_PROFILES_ACTIVE=docker --rm  -d --link tododb --name demo -p 8080:8080 openshift-java-demo`
 
-Running on openshift:
-Create database: 
+Once we've verified the app works locally in Docker, it's time to run the app on openshift. 
+
+Tag the image, and push it to Dockerhub or another image repository such as quay.io. 
+
+Make the project: 
+`oc new-project java-demo-s2i`
+Set up the database: 
 `oc new-app postgresql-ephemeral -p POSTGRESQL_USER=todo -p POSTGRESQL_PASSWORD=openshift123 -p POSTGRESQL_DATABASE=todo  -p DATABASE_SERVICE_NAME=tododb`
 
 Wait for database pod to be running
@@ -37,9 +45,10 @@ psql -h localhost -p 5532 -U todo
 ``` 
 
 deploy app using new-app/s2i on source code
+
 oc new-app --name java-demo --as-deployment-config java~https://github.com/sholly/openshift-java-demo.git
 
-oc create configmap java-demo --from-file openshift/deploy/application.properties
+oc create configmap java-demo --from-file openshift/application.properties
 oc set volume dc/java-demo --add -t configmap -m /deployments/config --name java-demo-volume --configmap-name java-demo
 
 oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo --from-literal SPRING_DATASOURCE_PASSWORD=openshift123
@@ -61,8 +70,9 @@ oc new-app --docker-image=docker.io/sholly/openshift-java-demo:latest --name jav
 oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo --from-literal SPRING_DATASOURCE_PASSWORD=openshift123
 oc set env dc/java-demo  --from secret/tododbsecret
 
-oc create configmap java-demo --from-file openshift/deploy/application.properties
+oc create configmap java-demo --from-file openshift/application.properties
 oc set volume dc/java-demo --add -t configmap -m /deployments/config --name java-demo-volume --configmap-name java-demo
 
 oc expose svc java-demo 
+
 

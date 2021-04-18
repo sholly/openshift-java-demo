@@ -1,6 +1,5 @@
 apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
-name: java-demo
 metadata:
   labels:
     app: java-demo
@@ -42,6 +41,27 @@ spec:
               name: tododbsecret
         image: docker.io/sholly/openshift-java-demo@sha256:9a2811ddffe448241128320f6d7f35eafe438ae69ab8486d29f7bd63fd51ecb0
         imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /actuator/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /actuator/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+
         name: java-demo
         ports:
         - containerPort: 8080
