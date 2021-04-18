@@ -18,7 +18,7 @@ Then build docker image:
 `docker build -f Dockerfile.local -t openshift-java-demo .`
 Now run the dockerized app.  We have to use the *--link* flag to allow demo app to communicate with the database container
 
-`docker run -e SPRING_PROFILES_ACTIVE=dockerlocal --rm  -d --link tododb --name demo -p 8080:8080 openshift-java-demo`
+`docker run -e SPRING_PROFILES_ACTIVE=local --rm  -d --link tododb --name demo -p 8080:8080 openshift-java-demo`
 
 Running on openshift:
 oc new-app --name java-demo --as-deployment-config java~https://github.com/sholly/openshift-java-demo.git
