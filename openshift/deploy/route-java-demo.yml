@@ -1,5 +1,6 @@
 apiVersion: route.openshift.io/v1
 kind: Route
+name: java-demo
 metadata:
   annotations:
     openshift.io/host.generated: "true"

@@ -1,5 +1,6 @@
 apiVersion: image.openshift.io/v1
 kind: ImageStream
+name: java-demo
 metadata:
   labels:
     app: java-demo

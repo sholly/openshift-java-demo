@@ -1,5 +1,6 @@
 apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
+name: java-demo
 metadata:
   labels:
     app: java-demo
