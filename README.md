@@ -27,8 +27,11 @@ Create database:
 
 Wait for database pod to be running
 
-Initialize database with
+
+Initialize database:
+
 ```
+oc port-forward $POD 5532:5432
 psql -h localhost -p 5532 -U todo
 #\i todo.openshift.sql
 ``` 
