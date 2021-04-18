@@ -7,7 +7,8 @@ docker run -d --rm --name tododb -p 5432:5432 \
 -e POSTGRES_PASSWORD=demo123 \
 -e POSTGRES_DB=todo postgres:10
 ```
-
+psql -h localhost -p 5432 -U todo
+#\i todo.sql
 run locally in docker: 
 
 first, build app with
@@ -51,6 +52,8 @@ docker login -u $USER quay.io
 oc create secret generic quayio --from-file  .dockerconfigjson=/home/sholly/.docker/config.json --type kubernetes.io/dockerconfigjson
 oc secrets link default quayio --for pull
 oc new-app --docker-image=quay.io/sholly/openshift-java-demo:latest --name java-demo --as-deployment-config
+or
+oc new-app --docker-image=docker.io/sholly/openshift-java-demo:latest --name java-demo --as-deployment-config
 
 oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo --from-literal SPRING_DATASOURCE_PASSWORD=openshift123
 oc set env dc/java-demo  --from secret/tododbsecret
