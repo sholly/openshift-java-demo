@@ -39,7 +39,7 @@ spec:
             secretKeyRef:
               key: SPRING_DATASOURCE_USER
               name: tododbsecret
-        image: docker.io/sholly/openshift-java-demo@sha256:9a2811ddffe448241128320f6d7f35eafe438ae69ab8486d29f7bd63fd51ecb0
+        image: docker.io/sholly/openshift-java-demo:latest
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
@@ -54,14 +54,13 @@ spec:
         readinessProbe:
           failureThreshold: 3
           httpGet:
-            path: /actuator/health
+            path: /todos
             port: 8080
             scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 2
-
         name: java-demo
         ports:
         - containerPort: 8080

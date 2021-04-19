@@ -1,4 +1,4 @@
-#Simple Spring Boot application showing various methods of deploying to Openshift.
+##Simple Spring Boot application showing various methods of deploying to Openshift.
 
 ## Application information:
 
@@ -48,13 +48,14 @@ Now run the dockerized app.  We have to use the *--link* flag to allow demo app 
 
 Once we've verified the app works locally in Docker, it's time to run the app on openshift.
 
-Tag the image, and push it to Dockerhub or another image repository such as quay.io: 
+Tag the image, and push it to Dockerhub or another image repository such as quay.io.  This image will be
+used in later steps to deploy the application. 
 
 `docker tag openshift-java-demo:latest docker.io/sholly/openshift-java-demo:latest  && docker push docker.io/sholly/openshift-java-demo:latest`
 
 
 ##Deploy the application using new-app/s2i on source code
-Make the project: 
+Create a new project: 
 
 `oc new-project java-demo-s2i`
 
@@ -149,31 +150,145 @@ Finally, we need to create the route in order to access the application:
 
 Let's test the application and verify correct operation.  
 
-Now let's set liveness and readiness probes: 
+Get the route: 
+`oc get route`
 
-`oc set probe dc/java-demo --readiness  --get-url=http://:8080/actuator/health --initial-delay-seconds=10 --timeout-seconds=2`
+Test the /todos endpoint, verify that we receive 3 todos: 
+
+`curl java-demo-java-demo-s2i.apps.ocp4.lab.unixnerd.org/todos`
+
+Test the /demoenv endpoint, verify we receive the message from the demo.env property in the ConfigMap:
+
+`curl java-demo-java-demo-s2i.apps.ocp4.lab.unixnerd.org/demoenv`
+
+
+##Deploying the application from a previously-built image:
+
+This process looks the same as letting Openshift build from source code, but we're
+using the Docker image we built and pushed 
+
+Create the project:
+
+`oc new-project java-demo-image`
+
+Set up the database:
+
+```
+oc new-app postgresql-ephemeral -p POSTGRESQL_USER=todo \
+   -p POSTGRESQL_PASSWORD=openshift123 \
+   -p POSTGRESQL_DATABASE=todo \
+   -p DATABASE_SERVICE_NAME=tododb
+```
+
+Initialize the database: 
+
+```
+oc port-forward $POD 5532:5432
+psql -h localhost -p 5532 -U todo
+todo=>\i todo.openshift.sql
+``` 
+
+Deploy the application using the Docker image we pushed to docker.io: 
+
+For quay.io: 
+
+`oc new-app --docker-image=quay.io/sholly/openshift-java-demo:latest --name java-demo --as-deployment-config`
+
+For docker.io:
+
+`oc new-app --docker-image=docker.io/sholly/openshift-java-demo:latest --name java-demo --as-deployment-config`
+
+For this example, let's pause the DeploymentConfig rollouts until we've configured the app: 
+
+`oc rollout pause dc/java-demo`
+
+Create the configmap and set the volume: 
+
+`oc create configmap java-demo --from-file openshift/application.properties`
+
+```shell
+oc set volume dc/java-demo --add -t configmap \
+   -m /deployments/config --name java-demo-volume \
+   --configmap-name java-demo
+```
+
+Create the secret and set the environment variables on the DeploymentConfig: 
+```shell
+oc create secret generic tododbsecret \
+   --from-literal SPRING_DATASOURCE_USER=todo\
+  --from-literal SPRING_DATASOURCE_PASSWORD=openshift123
+  ```
+  
+`oc set env dc/java-demo  --from secret/tododbsecret`
+
+
+Now resume DeploymentConfig rollouts, and expose the application.
+
+`oc rollout resume dc/java-demo`
+
+`oc expose svc java-demo` 
+
+Test that things are working as expected: 
+
+`curl java-demo-java-demo-image.apps.ocp4.lab.unixnerd.org/todos`
+
+`curl java-demo-java-demo-image.apps.ocp4.lab.unixnerd.org/demoenv`
+
+Now let's set liveness and readiness probes so we can control:
 
 `oc set probe dc/java-demo --liveness --get-url=http://:8080/actuator/health --initial-delay-seconds=10 --timeout-seconds=2`
 
+`oc set probe dc/java-demo --readiness --get-url=http://:8080/todos --initial-delay-seconds=10 --timeout-seconds=2`
 
 
+If we need to, we can manually scale the number of pods we're running like so: 
 
+`oc scale dc/java-demo --replicas=3`
 
-Deploy app from image:
+##Deploying the application from yaml files. 
 
-docker login -u $USER quay.io
-oc create secret generic quayio --from-file  .dockerconfigjson=/home/sholly/.docker/config.json --type kubernetes.io/dockerconfigjson
-oc secrets link default quayio --for pull
-oc new-app --docker-image=quay.io/sholly/openshift-java-demo:latest --name java-demo --as-deployment-config
-or
-oc new-app --docker-image=docker.io/sholly/openshift-java-demo:latest --name java-demo --as-deployment-config
+The previous deployments were fine, but involved a lot of manual work.  I've taken the step of 
+exporting the DeploymentConfigs, Services, Route, Secrets, and the Configmap from the previous
+app deployment, cleaned the yaml files up, and placed them in openshift/deploy-yaml. 
+Now we can simply deploy our app like from the project root like so: 
 
-oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo --from-literal SPRING_DATASOURCE_PASSWORD=openshift123
-oc set env dc/java-demo  --from secret/tododbsecret
+First create the project: 
+`oc new-project java-demo-deploy-yaml`
 
-oc create configmap java-demo --from-file openshift/application.properties
-oc set volume dc/java-demo --add -t configmap -m /deployments/config --name java-demo-volume --configmap-name java-demo
+Now simply apply the yaml files: 
 
-oc expose svc java-demo 
+`oc apply -f openshift/deploy-yaml/`
 
+Run `oc get all` to see all of the Kubernetes objects:
 
+```shell
+NAME                     READY   STATUS      RESTARTS   AGE
+pod/java-demo-1-deploy   0/1     Completed   0          100s
+pod/java-demo-1-qscmx    1/1     Running     0          98s
+pod/tododb-1-deploy      0/1     Completed   0          101s
+pod/tododb-1-lnd8x       1/1     Running     0          98s
+
+NAME                                DESIRED   CURRENT   READY   AGE
+replicationcontroller/java-demo-1   1         1         1       101s
+replicationcontroller/tododb-1      1         1         1       101s
+
+NAME                TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+service/java-demo   ClusterIP   172.30.147.241   <none>        8080/TCP   102s
+service/tododb      ClusterIP   172.30.167.66    <none>        5432/TCP   102s
+
+NAME                                           REVISION   DESIRED   CURRENT   TRIGGERED BY
+deploymentconfig.apps.openshift.io/java-demo   1          1         1         config,image(java-demo:latest)
+deploymentconfig.apps.openshift.io/tododb      1          1         1         config,image(postgresql:10-el8)
+
+NAME                                       IMAGE REPOSITORY                                                                   TAGS     UPDATED
+imagestream.image.openshift.io/java-demo   image-registry.openshift-image-registry.svc:5000/java-demo-deploy-yaml/java-demo   latest   About a minute ago
+
+NAME                                 HOST/PORT                                                    PATH   SERVICES    PORT       TERMINATION   WILDCARD
+route.route.openshift.io/java-demo   java-demo-java-demo-deploy-yaml.apps.ocp4.lab.unixnerd.org          java-demo   8080-tcp                 None
+```
+
+Again, test that things are working as expected:
+
+`curl java-demo-java-demo-image.apps.ocp4.lab.unixnerd.org/todos`
+
+`curl java-demo-java-demo-image.apps.ocp4.lab.unixnerd.org/demoenv`

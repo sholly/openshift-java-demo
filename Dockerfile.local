@@ -6,5 +6,4 @@ ADD target/openshift-java-demo.jar /deployments/openshift-java-demo.jar
 WORKDIR /deployments
 USER 1001
 EXPOSE 8080
-#ENTRYPOINT ["java","-jar","-Dspring.profiles.active=docker", "/openshift-java-demo.jar"]
 ENTRYPOINT ["java","-jar", "/deployments/openshift-java-demo.jar"]
