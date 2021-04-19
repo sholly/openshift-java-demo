@@ -39,7 +39,7 @@ spec:
             secretKeyRef:
               key: SPRING_DATASOURCE_USER
               name: tododbsecret
-        image: docker.io/sholly/openshift-java-demo:latest
+        image: java-demo:latest
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
