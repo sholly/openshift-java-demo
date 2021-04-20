@@ -1,4 +1,4 @@
-##Simple Spring Boot application showing various methods of deploying to Openshift.
+## Simple Spring Boot application showing various methods of deploying to Openshift.
 
 ## Application information:
 
@@ -10,7 +10,7 @@ There are two endpoints of interest:
 Also note that all of the Spring Actuator endpoints have been enabled for demo 
 purposes. 
 
-##Building, deploying, and running the application locally via Docker:
+## Building, deploying, and running the application locally via Docker:
 
 First, start a local postgres database: 
 
@@ -54,7 +54,7 @@ used in later steps to deploy the application.
 `docker tag openshift-java-demo:latest docker.io/sholly/openshift-java-demo:latest  && docker push docker.io/sholly/openshift-java-demo:latest`
 
 
-##Deploy the application using new-app/s2i on source code
+## Deploy the application using new-app/s2i on source code
 Create a new project: 
 
 `oc new-project java-demo-s2i`
@@ -162,7 +162,7 @@ Test the /demoenv endpoint, verify we receive the message from the demo.env prop
 `curl java-demo-java-demo-s2i.apps.ocp4.lab.unixnerd.org/demoenv`
 
 
-##Deploying the application from a previously-built image:
+## Deploying the application from a previously-built image:
 
 This process looks the same as letting Openshift build from source code, but we're
 using the Docker image we built and pushed 
@@ -245,7 +245,7 @@ If we need to, we can manually scale the number of pods we're running like so:
 
 `oc scale dc/java-demo --replicas=3`
 
-##Deploying the application from yaml files. 
+## Deploying the application from yaml files. 
 
 The previous deployments were fine, but involved a lot of manual work.  I've taken the step of 
 exporting the DeploymentConfigs, Services, Route, Secrets, and the Configmap from the previous
