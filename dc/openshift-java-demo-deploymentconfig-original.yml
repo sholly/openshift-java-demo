@@ -1,0 +1,88 @@
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  annotations:
+    fabric8.io/git-commit: 6af619dc11fb3b5b981f6b2a9fb03d87e635ca58
+    fabric8.io/git-branch: fabric8
+    fabric8.io/git-url: git@github.com:sholly/openshift-java-demo.git
+    fabric8.io/scm-url: https://github.com/spring-projects/spring-boot/openshift-java-demo
+    fabric8.io/scm-tag: HEAD
+  labels:
+    app: openshift-java-demo
+    provider: fabric8
+    version: 0.0.1-SNAPSHOT
+    group: com.redhat.demo
+  name: openshift-java-demo
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    app: openshift-java-demo
+    provider: fabric8
+    group: com.redhat.demo
+  strategy:
+    rollingParams:
+      timeoutSeconds: 3600
+    type: Rolling
+  template:
+    metadata:
+      annotations:
+        fabric8.io/git-commit: 6af619dc11fb3b5b981f6b2a9fb03d87e635ca58
+        fabric8.io/git-branch: fabric8
+        fabric8.io/scm-tag: HEAD
+        fabric8.io/git-url: git@github.com:sholly/openshift-java-demo.git
+        fabric8.io/scm-url: https://github.com/spring-projects/spring-boot/openshift-java-demo
+      labels:
+        app: openshift-java-demo
+        provider: fabric8
+        version: 0.0.1-SNAPSHOT
+        group: com.redhat.demo
+    spec:
+      containers:
+      - env:
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: openshift-java-demo:latest
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /actuator/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 180
+          successThreshold: 1
+        name: spring-boot
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 9779
+          name: prometheus
+          protocol: TCP
+        - containerPort: 8778
+          name: jolokia
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /actuator/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
+          successThreshold: 1
+        securityContext:
+          privileged: false
+  triggers:
+  - type: ConfigChange
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - spring-boot
+      from:
+        kind: ImageStreamTag
+        name: openshift-java-demo:latest
+    type: ImageChange

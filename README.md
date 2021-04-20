@@ -292,3 +292,32 @@ Again, test that things are working as expected:
 `curl java-demo-java-demo-image.apps.ocp4.lab.unixnerd.org/todos`
 
 `curl java-demo-java-demo-image.apps.ocp4.lab.unixnerd.org/demoenv`
+
+
+fabric8: 
+there are things such as replicas, config/image changes that go missing
+when a deploymentconfig snippet is created.  This had to be found out 
+via experimentation.
+
+This took hours. 
+
+plugin vesion >= 4.3.0 fails with a NullPointerException
+
+Project has moved to jkube
+
+oc new project
+
+create database as above
+
+full build+deploy: 
+
+`mvn clean fabric8:deploy`
+
+Apply config:
+
+`mvn clean fabric8:resource-apply`
+
+
+
+
+
