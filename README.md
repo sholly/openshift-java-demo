@@ -26,7 +26,8 @@ The database should be automatically initialized with the .sql file in src/main/
 
 Now we can build a local docker image and run it.  
 
-first, build app with
+Build the app with
+
 `mvn clean package`
 
 Then build docker image:
@@ -75,22 +76,20 @@ tododb-1-nl429    1/1     Running   0          13s
 ```
 
 
-Now initialize the database on Openshift.  The easiest way to do so is to use
-the `oc port-forward` command to set up a local port forward to the pod running the 
-Postgresql database: 
+Now load data into the database.  The easiest way to do so is to use
+the `oc port-forward` command to set up a local port forward to the database pod: 
 
 `oc port-forward $POD 5532:5432`
 
-Then, loading data is almost exactly like loading data locally:
+Load data:
 
 ```
 psql -h localhost -p 5532 -U todo
 todo=>\i todo.openshift.sql
 ``` 
 
-
-
-We can deploy our app directly from the git repo like so: 
+For the first example, we can use Openshift's code repository introspection to deploy our app directly from the 
+Github repository.  Openshift will find a pom.xml at the root, and build and deploy our app as Java: 
 
 ```shell
 oc new-app --name java-demo \
@@ -98,7 +97,7 @@ oc new-app --name java-demo \
    java~https://github.com/sholly/openshift-java-demo.git
 ```
 
-Let's check the pods with `oc get pods`: 
+Wait for the app to be running `oc get pods`: 
 
 ```shell
 NAME                 READY   STATUS             RESTARTS   AGE
@@ -109,46 +108,48 @@ tododb-1-deploy      0/1     Completed          0          15m
 tododb-1-nl429       1/1     Running            0          15m
 
 ```
-The application is running, but it doesn't have the proper application.properties,
-nor does it know the database username and password. We will now configure the application properly.
+The application is running, but it is crashing because we need to configure the application.properties,
+as well as the database credientials. We will now configure the application via a ConfigMap and Secret.
 
 
-First, let's create the configmap from an application.properties specific to openshift: 
+First, let's create the ConfigMap from an application.properties specific to Openshift: 
 
 `oc create configmap java-demo --from-file openshift/application.properties`
 
 Next we will add the ConfigMap to the DeploymentConfig as a volume.  By default, the java s2i image build will place our 
-Spring Boot jar under deployments.  Spring Boot, by default, will look for application.properties files in a config 
-directory under the directory which contains our jar file.  So we set the volume for the ConfigMap to be 
-'/deployments/config': 
+Spring Boot jar under /deployments.  Spring Boot, by default, will look for application.properties files in a config 
+directory under the /deployments directory.  So we set the volume for the ConfigMap to be '/deployments/config': 
 
 `oc set volume dc/java-demo --add -t configmap -m /deployments/config --name java-demo-volume --configmap-name java-demo`
 
 Now, let's set up the secret containing the username and password for database access: 
 
-`oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo --from-literal SPRING_DATASOURCE_PASSWORD=openshift123`
+`oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo \ 
+  --from-literal SPRING_DATASOURCE_PASSWORD=openshift123`
 
-Then, set environment variables containing the names and values from the tododbsecret: 
+Then, set environment variables containing the SPRING_DATASOURCE_USER and SPRING_DATASOURCE_PASSWORD from the tododbsecret: 
 
 `oc set env dc/java-demo  --from secret/tododbsecret`
 
-Now our pod should be in the running state: 
+Each time we modify the DeploymentConfig, it will trigger a new deployment of the application. 
+
+Our application pod should now be in a running state: 
 
 ```shell
 java-demo-4-deploy   0/1     Completed   0          2m11s
 java-demo-4-kx2xg    1/1     Running     0          2m6s
 ```
 
-Finally, we need to create a route for our application: 
+Finally, create a route for our application: 
 
 `oc expose svc java-demo`
 
-Let's test the application and verify correct operation.  
+Test the application and verify correct operation.  
 
 Get the route: 
 `oc get route`
 
-Test the /todos endpoint, verify that we receive 3 todos: 
+Test the /todos endpoint, verify that we data: 
 
 `curl java-demo-java-demo-s2i.apps.ocp4.lab.unixnerd.org/todos`
 
@@ -158,14 +159,10 @@ Test the /demoenv endpoint, verify we receive the message from the demo.env prop
 
 ## Deploying the application using the fabric8-maven-plugin:
 
-Warning: there are things such as replicas, config/image changes that go missing
-when a deploymentconfig snippet is created.  This had to be found out
-via experimentation.
 
 Create a project: 
 
-``
-oc new project
+`oc new project java-demo-fabric8`
 
 Create the database:
 
@@ -184,43 +181,46 @@ psql -h localhost -p 5532 -U todo
 todo=>\i todo.openshift.sql
 ``` 
 
-With an initialized database, let's let the fabric8 maven plugin deploy our application:
+Now build and deploy the application via the fabric8-maven-plugin.  It will compile the app, build an image via s2i, 
+craft Openshift configuration objects, and apply them in the current namespace.  
 
 `mvn clean fabric8:deploy`
 
-Note that when doing a vanilla deploy, the application pod winds up in a CrashLoopBackoff state, 
-due to no application.properties or database credentials. 
+The fabric8 plugin knows nothing about the needed ConfigMap or Secret, so the app will again be crash looping on first deploy. 
 
-The fabric8 plugin, however, will apply snippets of openshift configuration if put into 
-src/main/fabric8, so let's do that now with the files in the fabric8 directory: 
+The fabric8 plugin, however, will apply snippets of openshift configuration to the default configuration it creates if 
+we create the necessary snippets.  Examine the partial files in fabric8/.  We see our ConfigMap, Secret, and a partial 
+DeploymentConfig snippet that will be merged into the generated DeploymentConfig.
+
+Copy the files in fabric8/ to /src/main/fabric8/:
 
 `cp fabric8/* src/main/fabric8/`
 
 Now we can run the 'resource-apply' goal, which will generate our application configuration, 
-including the snippets we copied. 
+applying and merging the snippets we copied. 
 
 `mvn clean fabric8:resource-apply`
 
-## Deploying the application from a previously-built image:
+Now our application should be running properly. Examine the /todos and /demoenv endpoints to verify a correct 
+application deployment.
 
-This process looks the same as letting Openshift build from source code, but we're
-using the Docker image we built and pushed 
+## Deploying the application from a Docker image:
+
+If we pass `oc new-app` an existing Docker image, Openshift will pull and introspect the image, then create an 
+application based
 
 Create the project:
 
 `oc new-project java-demo-image`
 
-Set up the database:
+Set up and initialize the database:
 
-```
+```shell
 oc new-app postgresql-ephemeral -p POSTGRESQL_USER=todo \
    -p POSTGRESQL_PASSWORD=openshift123 \
    -p POSTGRESQL_DATABASE=todo \
    -p DATABASE_SERVICE_NAME=tododb
 ```
-
-Initialize the database: 
-
 ```
 oc port-forward $POD 5532:5432
 psql -h localhost -p 5532 -U todo
@@ -229,15 +229,12 @@ todo=>\i todo.openshift.sql
 
 Deploy the application using the Docker image we pushed to docker.io: 
 
-For quay.io: 
-
-`oc new-app --docker-image=quay.io/sholly/openshift-java-demo:latest --name java-demo --as-deployment-config`
-
 For docker.io:
 
 `oc new-app --docker-image=docker.io/sholly/openshift-java-demo:latest --name java-demo --as-deployment-config`
 
-For this example, let's pause the DeploymentConfig rollouts until we've configured the app: 
+Since every change to a DeploymentConfig results in a new deployment, this time let's pause the DeploymentConfig 
+rollouts until we've configured the application: 
 
 `oc rollout pause dc/java-demo`
 
@@ -260,7 +257,6 @@ oc create secret generic tododbsecret \
   
 `oc set env dc/java-demo  --from secret/tododbsecret`
 
-
 Now resume DeploymentConfig rollouts, and expose the application.
 
 `oc rollout resume dc/java-demo`
@@ -273,20 +269,29 @@ Test that things are working as expected:
 
 `curl java-demo-java-demo-image.apps.ocp4.lab.unixnerd.org/demoenv`
 
-Now let's set liveness and readiness probes so we can control:
+To make sure our application is both running and ready to accept traffic, 
+let's set liveness and readiness probes:
+
+The liveness probe is how Openshift determines if the application is up:
 
 `oc set probe dc/java-demo --liveness --get-url=http://:8080/actuator/health --initial-delay-seconds=10 --timeout-seconds=2`
+
+The readiness probe is how Openshift determines if the application is ready to accept traffic.  We're using the 
+/todos endpoint to make sure that the application's database connection is properly configured and the endpoint 
+is working normally:
 
 `oc set probe dc/java-demo --readiness --get-url=http://:8080/todos --initial-delay-seconds=10 --timeout-seconds=2`
 
 
-If we need to, we can manually scale the number of pods we're running like so: 
+If our application is experiencing increased load, we can manually scale up or down the number of pods we're 
+running like so: 
 
 `oc scale dc/java-demo --replicas=3`
 
 ## Deploying the application from yaml files. 
 
-The previous deployments were fine, but involved a lot of manual work.  I've taken the step of 
+Once we get an application deployed and properly configured, it is desirable to save the Openshift configuration so we 
+reuse them for other purposes such as deployments to higher environments.  I've taken the step of 
 exporting the DeploymentConfigs, Services, Route, Secrets, and the Configmap from the previous
 app deployment, cleaned the yaml files up, and placed them in openshift/deploy-yaml. 
 Now we can simply deploy our app like from the project root like so: 
