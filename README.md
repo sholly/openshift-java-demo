@@ -12,7 +12,7 @@ purposes.
 
 ## Building, deploying, and running the application locally via Docker:
 
-First, start a local postgres database: 
+First, start a local postgres database, from the root of this project: 
 
 ```
 docker run -d --rm --name tododb -p 5432:5432 \
@@ -22,12 +22,7 @@ docker run -d --rm --name tododb -p 5432:5432 \
 -e POSTGRES_DB=todo postgres:10
 ```
 
-Initialize the local database: 
-```
-psql -h localhost -p 5432 -U todo
-todo=>\i todo.sql
-```
-
+The database should be automatically initialized with the .sql file in src/main/resources/initdb.
 
 Now we can build a local docker image and run it.  
 
@@ -144,7 +139,7 @@ java-demo-4-deploy   0/1     Completed   0          2m11s
 java-demo-4-kx2xg    1/1     Running     0          2m6s
 ```
 
-Finally, we need to create the route in order to access the application: 
+Finally, we need to create a route for our application: 
 
 `oc expose svc java-demo`
 
@@ -161,6 +156,50 @@ Test the /demoenv endpoint, verify we receive the message from the demo.env prop
 
 `curl java-demo-java-demo-s2i.apps.ocp4.lab.unixnerd.org/demoenv`
 
+## Deploying the application using the fabric8-maven-plugin:
+
+Warning: there are things such as replicas, config/image changes that go missing
+when a deploymentconfig snippet is created.  This had to be found out
+via experimentation.
+
+Create a project: 
+
+``
+oc new project
+
+Create the database:
+
+```
+oc new-app postgresql-ephemeral -p POSTGRESQL_USER=todo \
+   -p POSTGRESQL_PASSWORD=openshift123 \
+   -p POSTGRESQL_DATABASE=todo \
+   -p DATABASE_SERVICE_NAME=tododb
+```
+
+Initialize the database:
+
+```
+oc port-forward $POD 5532:5432
+psql -h localhost -p 5532 -U todo
+todo=>\i todo.openshift.sql
+``` 
+
+With an initialized database, let's let the fabric8 maven plugin deploy our application:
+
+`mvn clean fabric8:deploy`
+
+Note that when doing a vanilla deploy, the application pod winds up in a CrashLoopBackoff state, 
+due to no application.properties or database credentials. 
+
+The fabric8 plugin, however, will apply snippets of openshift configuration if put into 
+src/main/fabric8, so let's do that now with the files in the fabric8 directory: 
+
+`cp fabric8/* src/main/fabric8/`
+
+Now we can run the 'resource-apply' goal, which will generate our application configuration, 
+including the snippets we copied. 
+
+`mvn clean fabric8:resource-apply`
 
 ## Deploying the application from a previously-built image:
 
@@ -292,30 +331,6 @@ Again, test that things are working as expected:
 `curl java-demo-java-demo-image.apps.ocp4.lab.unixnerd.org/todos`
 
 `curl java-demo-java-demo-image.apps.ocp4.lab.unixnerd.org/demoenv`
-
-
-fabric8: 
-there are things such as replicas, config/image changes that go missing
-when a deploymentconfig snippet is created.  This had to be found out 
-via experimentation.
-
-This took hours. 
-
-plugin vesion >= 4.3.0 fails with a NullPointerException
-
-Project has moved to jkube
-
-oc new project
-
-create database as above
-
-full build+deploy: 
-
-`mvn clean fabric8:deploy`
-
-Apply config:
-
-`mvn clean fabric8:resource-apply`
 
 
 
