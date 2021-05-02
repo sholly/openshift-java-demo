@@ -124,7 +124,7 @@ directory under the /deployments directory.  So we set the volume for the Config
 
 Now, let's set up the secret containing the username and password for database access: 
 
-`oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo \ 
+`oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo 
   --from-literal SPRING_DATASOURCE_PASSWORD=openshift123`
 
 Then, set environment variables containing the SPRING_DATASOURCE_USER and SPRING_DATASOURCE_PASSWORD from the tododbsecret: 
@@ -251,7 +251,7 @@ oc set volume dc/java-demo --add -t configmap \
 Create the secret and set the environment variables on the DeploymentConfig: 
 ```shell
 oc create secret generic tododbsecret \
-   --from-literal SPRING_DATASOURCE_USER=todo\
+   --from-literal SPRING_DATASOURCE_USER=todo \
   --from-literal SPRING_DATASOURCE_PASSWORD=openshift123
   ```
   

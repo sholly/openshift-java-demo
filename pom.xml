@@ -102,11 +102,11 @@
                 <configuration>
                     <images>
                         <image>
-                            <name>${project.artifactId}:%t</name>
+                            <name>${project.artifactId}:latest</name>
                             <alias>${project.artifactId}</alias>
                             <build>
                                 <from>
-                                    registry.access.redhat.com/redhat-openjdk-18/openjdk18-openshift:${openjdk18-openshift.version}
+                                    registry.access.redhat.com/redhat-openjdk-18/openjdk18-openshift:1.8
                                 </from>
                                 <assembly>
                                     <basedir>/deployments</basedir>
