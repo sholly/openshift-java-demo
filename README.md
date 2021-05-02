@@ -97,6 +97,14 @@ oc new-app --name java-demo \
    java~https://github.com/sholly/openshift-java-demo.git
 ```
 
+DEPLOYING AS jar file: 
+```shell
+oc new-app --name java-demo --as-deployment-config java~https://github.com/sholly/openshift-java-demo.git#war \
+   --env JAVA_APP_JAR="openshift-java-demo.war" \
+   --build-env ARTIFACT_COPY_ARGS="*.war" \
+   --build-env JAVA_APP_DIR="/deployments"
+```
+
 Wait for the app to be running `oc get pods`: 
 
 ```shell
