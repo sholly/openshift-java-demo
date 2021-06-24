@@ -340,4 +340,52 @@ Again, test that things are working as expected:
 
 
 
+## External Service Demo
 
+To init tododb somewhere with docker (dockerlab):
+
+Clone this repo. 
+
+cd openshift-java-demo, remember!!  the database won't init unless in this directory..
+
+```shell
+docker run -d  --restart=unless-stopped --name tododb -p 5432:5432 \
+  -v $PWD/src/main/resources/initdb/:/docker-entrypoint-initdb.d/:Z \
+  -e POSTGRES_USER=todo \
+  -e POSTGRES_PASSWORD=openshift123 \
+  -e POSTGRES_DB=todo postgres:10
+```
+apply openshift/deploy-with-db-externalservice
+
+
+
+## External service with Service Mesh
+
+Create project servicemesh-externalsvc
+add to smmr
+
+deploy app: 
+oc apply -f deploy-servicemesh-db-externalservice-application/
+
+Note that api calls work, traffic to external db working. 
+
+Edit the istio-basic cm: 
+
+Change outboundTrafficPolicy
+oc edit cm istio-basic -n istio-system
+
+outboundTrafficPolicy:
+  mode: REGISTRY_ONLY
+
+After 30-45 seconds, calls should start to fail..
+
+Now apply the ServiceEntry file:
+oc apply -f deploy-servicemesh-db-externalservice-serviceentry/serviceentry-tododb-external.yaml
+
+
+
+Change outboundTrafficPolicy to ALLOW_ANY
+oc edit cm istio-basic -n istio-system
+
+outboundTrafficPolicy:
+  mode: ALLOW_ANY
