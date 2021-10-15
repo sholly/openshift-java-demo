@@ -149,7 +149,7 @@ Test the application and verify correct operation.
 Get the route: 
 `oc get route`
 
-Test the /todos endpoint, verify that we data: 
+Test the /todos endpoint, verify that we have data: 
 
 `curl java-demo-java-demo-s2i.apps.ocp4.lab.unixnerd.org/todos`
 
