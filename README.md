@@ -47,7 +47,10 @@ Once we've verified the app works locally in Docker, it's time to run the app on
 Tag the image, and push it to Dockerhub or another image repository such as quay.io.  This image will be
 used in later steps to deploy the application. 
 
-`docker tag openshift-java-demo:latest docker.io/sholly/openshift-java-demo:latest  && docker push docker.io/sholly/openshift-java-demo:latest`
+```
+docker tag openshift-java-demo:latest docker.io/sholly/openshift-java-demo:latest  && \
+     docker push docker.io/sholly/openshift-java-demo:latest`
+```
 
 
 ## Deploy the application using new-app/s2i on source code
@@ -124,8 +127,10 @@ directory under the /deployments directory.  So we set the volume for the Config
 
 Now, let's set up the secret containing the username and password for database access: 
 
-`oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo \ 
+```
+oc create secret generic tododbsecret --from-literal SPRING_DATASOURCE_USER=todo \ 
   --from-literal SPRING_DATASOURCE_PASSWORD=openshift123`
+```
 
 Then, set environment variables containing the SPRING_DATASOURCE_USER and SPRING_DATASOURCE_PASSWORD from the tododbsecret: 
 
