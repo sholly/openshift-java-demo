@@ -14,7 +14,7 @@ spec:
       openshift.io/imported-from: docker.io/sholly/openshift-java-demo:latest
     from:
       kind: DockerImage
-      name: docker.io/sholly/openshift-java-demo:latest
+      name: docker.io/sholly/java-demo:latest
     importPolicy: {}
     name: latest
     referencePolicy:
