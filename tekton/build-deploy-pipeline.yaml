@@ -1,0 +1,88 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: clone-build-deploy
+spec:
+  workspaces:
+  - name: shared-workspace
+  - name: maven-settings
+  params:
+  - name: deployment-name
+    type: string
+    description: name of the deployment to be patched
+    default: openshift-java-demo
+  - name: git-url
+    type: string
+    default: 'https://github.com/sholly/openshift-java-demo.git'
+    description: url of the git repo for the code of deployment
+  - name: git-revision
+    type: string
+    description: revision to be used from repo of the code for deployment
+    default: main
+  - name: image
+    type: string
+    description: image to be build from the code
+    default: 'image-registry.openshift-image-registry.svc:5000/openshift-java-demo/openshift-java-demo'
+  tasks:
+  - name: fetch-repository
+    taskRef:
+      name: git-clone
+      kind: ClusterTask
+    workspaces:
+    - name: output
+      workspace: shared-workspace
+    params:
+    - name: url
+      value: $(params.git-url)
+    - name: subdirectory
+      value: ""
+    - name: deleteExisting
+      value: "true"
+    - name: revision
+      value: $(params.git-revision)
+
+  - name: build-artifact-mvn
+    taskRef:
+      name: maven
+      kind: ClusterTask
+    params: 
+      - name: GOALS
+        value: 
+          - 'clean'
+          - 'package'
+    runAfter:
+      - fetch-repository
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    - name: maven-settings
+      workspace: maven-settings
+  - name: build-image-latest
+    params:
+      - name: IMAGE
+        value: $(params.image):latest
+      - name: TLSVERIFY
+        value: 'false'
+    runAfter:
+      - build-artifact-mvn
+    taskRef:
+      kind: ClusterTask
+      name: buildah
+    workspaces:
+      - name: source
+        workspace: shared-workspace
+
+  - name: apply-deployment
+    params:
+      - name: SCRIPT
+        value: |
+          oc apply -f openshift/deploy-yaml/
+    runAfter:
+      - build-image-latest
+    taskRef:
+      kind: ClusterTask
+      name: openshift-client
+    workspaces:
+      - name: manifest-dir
+        workspace: shared-workspace
+
