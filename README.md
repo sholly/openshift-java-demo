@@ -167,7 +167,7 @@ Test the /demoenv endpoint, verify we receive the message from the demo.env prop
 
 Create a project: 
 
-`oc new project java-demo-fabric8`
+`oc new-project java-demo-fabric8`
 
 Create the database:
 
@@ -236,7 +236,7 @@ Deploy the application using the Docker image we pushed to docker.io:
 
 For docker.io:
 
-`oc new-app --docker-image=docker.io/sholly/openshift-java-demo:latest --name java-demo --as-deployment-config`
+`oc new-app --image=docker.io/sholly/openshift-java-demo:latest --name java-demo --as-deployment-config`
 
 Since every change to a DeploymentConfig results in a new deployment, this time let's pause the DeploymentConfig 
 rollouts until we've configured the application: 
@@ -338,9 +338,9 @@ route.route.openshift.io/java-demo   java-demo-java-demo-deploy-yaml.apps.ocp4.l
 
 Again, test that things are working as expected:
 
-`curl java-demo-java-demo-image.apps.ocp4.lab.unixnerd.org/todos`
+`curl java-demo-java-demo-deploy-yaml.apps.ocp4.lab.unixnerd.org/todos`
 
-`curl java-demo-java-demo-image.apps.ocp4.lab.unixnerd.org/demoenv`
+`curl java-demo-java-demo-deploy-yaml.apps.ocp4.lab.unixnerd.org/demoenv`
 
 
 
