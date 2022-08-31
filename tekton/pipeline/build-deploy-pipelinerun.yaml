@@ -1,0 +1,28 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  annotations:
+  labels:
+    tekton.dev/pipeline: clone-build-deploy
+  generateName: clone-build-deploy-
+spec:
+  params:
+  - name: deployment-name
+    value: openshift-java-demo
+  - name: git-url
+    value: https://github.com/sholly/openshift-java-demo.git
+  - name: git-revision
+    value: main
+  - name: image
+    value: image-registry.openshift-image-registry.svc:5000/java-demo-tekton/openshift-java-demo
+  pipelineRef:
+    name: clone-build-deploy
+  serviceAccountName: pipeline
+  timeout: 1h0m0s
+  workspaces:
+  - name: shared-workspace
+    persistentVolumeClaim:
+      claimName: java-demo-workspace
+  - emptyDir: {}
+    name: maven-settings
+status: {}

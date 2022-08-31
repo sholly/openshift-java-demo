@@ -21,7 +21,7 @@ spec:
     default: main
   - name: image
     type: string
-    description: image to be build from the code
+    description: image to be built from the code
     default: 'image-registry.openshift-image-registry.svc:5000/java-demo-tekton/openshift-java-demo'
   tasks:
   - name: fetch-repository
@@ -78,7 +78,7 @@ spec:
     params:
       - name: SCRIPT
         value: |
-          oc apply -f openshift/deploy-yaml/
+          oc apply -f tekton/app/
     runAfter:
       - build-image-latest
     taskRef:
