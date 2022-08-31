@@ -22,7 +22,7 @@ spec:
   workspaces:
   - name: shared-workspace
     persistentVolumeClaim:
-      claimName: java-demo-workspace
+      claimName: build-deploy-workspace-pvc
   - emptyDir: {}
     name: maven-settings
 status: {}
