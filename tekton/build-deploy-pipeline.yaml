@@ -61,6 +61,8 @@ spec:
     params:
       - name: IMAGE
         value: $(params.image):latest
+      - name: DOCKERFILE
+        value: Dockerfile.local
       - name: TLSVERIFY
         value: 'false'
     runAfter:
