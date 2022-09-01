@@ -352,4 +352,11 @@ Create a new project:
 oc new-project java-demo-tekton
 ```
 
+Set up the database.  This time, use the deployment found in tekton/db/
+
+```
+oc apply -f tekton/db/
+```
+
+
 
