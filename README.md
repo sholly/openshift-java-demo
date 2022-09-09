@@ -346,6 +346,13 @@ Again, test that things are working as expected:
 
 
 ## Build and deploy with Tekton
+
+Note: To run this portion of the demo, you will need the tkn client. 
+The tkn client can be downloaded here: 
+
+https://tekton.dev/docs/cli/
+
+
 Create a new project: 
 
 ```
@@ -358,5 +365,35 @@ Set up the database.  This time, use the deployment found in tekton/db/
 oc apply -f tekton/db/
 ```
 
+As before, wait for the database pod to be up, then initialize: 
 
+```
+tododb-1-deploy   0/1     Completed   0          97s
+tododb-1-rr2tt    1/1     Running     0          90s
+```
 
+```
+$ oc port-forward tododb-1-rr2tt 
+
+$ psql -h localhost -p 5532 -U todo 
+Handling connection for 5532
+psql (14.3, server 10.21)
+Type "help" for help.
+
+todo=> \i openshift/todo.openshift.sql 
+CREATE TABLE
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+todo=> 
+
+```
+
+Now create the pipeline and the PVC neded for pipeline runs: 
+
+```
+oc apply -f tekton/pipeline/build-deploy-pipeline.yaml
+oc apply -f tekton/pipeline/build-deploy-workspace-pvc.yaml
+```
+
+With everything set up, let's run our pipeline: 
