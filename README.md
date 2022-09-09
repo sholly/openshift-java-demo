@@ -396,4 +396,10 @@ oc apply -f tekton/pipeline/build-deploy-pipeline.yaml
 oc apply -f tekton/pipeline/build-deploy-workspace-pvc.yaml
 ```
 
+This sets up our pipeline, and creates a 1GB PVC for the pipeline workspace.
+
+
+
 With everything set up, let's run our pipeline: 
+
+
